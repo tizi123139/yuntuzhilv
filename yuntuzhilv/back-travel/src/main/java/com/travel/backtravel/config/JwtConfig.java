@@ -41,9 +41,10 @@ public class JwtConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/auth/register",
-                                "/auth/login",
-                                "/auth/refresh",
+                                "/user/register",
+                                "/user/login",
+                                "/user/sendCode",
+                                "/user/logout",
                                 "/attractions/**",
                                 "/hotels/**",
                                 "/traffics/**",
@@ -84,9 +85,10 @@ public class JwtConfig {
         private final RedisUtil redisUtil;
 
         private static final List<String> EXCLUDED_PATHS = List.of(
-                "/auth/register",
-                "/auth/login",
-                "/auth/refresh",
+                "/user/register",
+                "/user/login",
+                "/user/sendCode",
+                "/user/logout",
                 "/ai/plan"
         );
 
@@ -102,9 +104,14 @@ public class JwtConfig {
             }
 
             String token = request.getHeader("Authorization");
+            if (token == null || token.isEmpty()) {
+                token = request.getHeader("token");
+            }
             if (token != null && token.startsWith("Bearer ")) {
                 token = token.substring(7);
+            }
 
+            if (token != null && !token.isEmpty()) {
                 try {
                     if (redisUtil.isMemberOfSet("jwt:blacklist", token)) {
                         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
