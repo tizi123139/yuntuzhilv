@@ -21,7 +21,7 @@ public class StatServiceImpl implements StatService {
 
     private final UserMapper userMapper;
     private final ItineraryMapper itineraryMapper;
-    private final BookingRecordMapper bookingRecordMapper;
+    private final BookingOrderMapper bookingOrderMapper;
     private final AttractionMapper attractionMapper;
     private final RedisUtil redisUtil;
 
@@ -38,11 +38,11 @@ public class StatServiceImpl implements StatService {
 
         statVO.setTotalUsers(userMapper.selectCount(null));
         statVO.setTotalItineraries(itineraryMapper.selectCount(null));
-        statVO.setTotalBookings(bookingRecordMapper.selectCount(null));
+        statVO.setTotalBookings(bookingOrderMapper.selectCount(null));
 
-        List<BookingRecord> bookings = bookingRecordMapper.selectList(null);
+        List<BookingOrder> bookings = bookingOrderMapper.selectList(null);
         BigDecimal totalRevenue = bookings.stream()
-                .map(BookingRecord::getTotalPrice)
+                .map(BookingOrder::getTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         statVO.setTotalRevenue(totalRevenue);
 
@@ -59,7 +59,7 @@ public class StatServiceImpl implements StatService {
         Map<String, Long> destinationCount = new HashMap<>();
 
         for (Itinerary itinerary : itineraries) {
-            String city = itinerary.getDestinationCity();
+            String city = itinerary.getDestination();
             destinationCount.merge(city, 1L, Long::sum);
         }
 

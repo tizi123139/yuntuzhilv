@@ -6,9 +6,9 @@ import com.travel.backtravel.dto.AiPlanDTO;
 import com.travel.backtravel.dto.ItineraryCreateDTO;
 import com.travel.backtravel.dto.ItineraryItemDTO;
 import com.travel.backtravel.entity.Itinerary;
-import com.travel.backtravel.entity.ItineraryItem;
+import com.travel.backtravel.entity.ItineraryAttraction;
 import com.travel.backtravel.exception.BusinessException;
-import com.travel.backtravel.mapper.ItineraryItemMapper;
+import com.travel.backtravel.mapper.ItineraryAttractionMapper;
 import com.travel.backtravel.mapper.ItineraryMapper;
 import com.travel.backtravel.rag.PromptTemplate;
 import com.travel.backtravel.service.AiService;
@@ -35,7 +35,7 @@ public class AiServiceImpl implements AiService {
     private final PromptTemplate promptTemplate;
     private final ItineraryService itineraryService;
     private final ItineraryMapper itineraryMapper;
-    private final ItineraryItemMapper itineraryItemMapper;
+    private final ItineraryAttractionMapper itineraryAttractionMapper;
     private final RedisUtil redisUtil;
     private final ObjectMapper objectMapper;
 
@@ -62,35 +62,34 @@ public class AiServiceImpl implements AiService {
             JsonNode jsonNode = parseJsonResponse(response);
 
             ItineraryCreateDTO createDTO = new ItineraryCreateDTO();
-            createDTO.setDestinationCity(dto.getDestinationCity());
-            createDTO.setDepartureCity(dto.getDepartureCity());
+            createDTO.setDestination(dto.getDestinationCity());
+            createDTO.setStartCity(dto.getDepartureCity());
             createDTO.setStartDate(dto.getStartDate());
             createDTO.setEndDate(dto.getEndDate());
-            createDTO.setBudget(dto.getBudget());
+            createDTO.setTotalBudget(dto.getBudget());
             createDTO.setInterests(dto.getInterests());
 
-            List<ItineraryItemDTO> items = new ArrayList<>();
+            List<ItineraryItemDTO> attractions = new ArrayList<>();
             JsonNode daysNode = jsonNode.get("days");
             if (daysNode != null && daysNode.isArray()) {
                 for (JsonNode dayNode : daysNode) {
-                    int dayNumber = dayNode.has("dayNumber") ? dayNode.get("dayNumber").asInt() : 1;
+                    int dayNum = dayNode.has("dayNumber") ? dayNode.get("dayNumber").asInt() : 1;
                     JsonNode itemsNode = dayNode.get("items");
                     if (itemsNode != null && itemsNode.isArray()) {
                         for (JsonNode itemNode : itemsNode) {
                             ItineraryItemDTO itemDTO = new ItineraryItemDTO();
-                            itemDTO.setDayNumber(dayNumber);
-                            itemDTO.setItemType(itemNode.has("itemType") ? itemNode.get("itemType").asText() : "ATTRACTIONS");
+                            itemDTO.setDayNum(dayNum);
                             itemDTO.setItemName(itemNode.has("itemName") ? itemNode.get("itemName").asText() : "");
                             itemDTO.setItemDesc(itemNode.has("itemDesc") ? itemNode.get("itemDesc").asText() : null);
                             itemDTO.setItemPrice(itemNode.has("itemPrice") ? BigDecimal.valueOf(itemNode.get("itemPrice").asDouble()) : BigDecimal.ZERO);
                             itemDTO.setStartTime(itemNode.has("startTime") ? itemNode.get("startTime").asText() : null);
                             itemDTO.setEndTime(itemNode.has("endTime") ? itemNode.get("endTime").asText() : null);
-                            items.add(itemDTO);
+                            attractions.add(itemDTO);
                         }
                     }
                 }
             }
-            createDTO.setItems(items);
+            createDTO.setAttractions(attractions);
 
             return itineraryService.createItinerary(userId != null ? userId : 0L, createDTO);
         } finally {
@@ -102,7 +101,7 @@ public class AiServiceImpl implements AiService {
 
     @Override
     @Transactional
-    public ItineraryVO modifyItinerary(Long userId, Long itineraryId, String modifications) {
+    public ItineraryVO modifyItinerary(Long userId, String itineraryId, String modifications) {
         Itinerary itinerary = itineraryMapper.selectById(itineraryId);
         if (itinerary == null) {
             throw new BusinessException("行程不存在");
@@ -112,25 +111,26 @@ public class AiServiceImpl implements AiService {
             throw new BusinessException("无权修改此行程");
         }
 
-        List<ItineraryItem> items = itineraryItemMapper.selectList(
-                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ItineraryItem>()
-                        .eq(ItineraryItem::getItineraryId, itineraryId)
-                        .orderByAsc(ItineraryItem::getDayNumber, ItineraryItem::getOrderNum)
+        List<ItineraryAttraction> attractions = itineraryAttractionMapper.selectList(
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ItineraryAttraction>()
+                        .eq(ItineraryAttraction::getItineraryId, itineraryId)
+                        .eq(ItineraryAttraction::getIsDeleted, 0)
+                        .orderByAsc(ItineraryAttraction::getDayNum, ItineraryAttraction::getOrderNum)
         );
 
         StringBuilder currentItinerary = new StringBuilder();
         currentItinerary.append("行程标题：").append(itinerary.getTitle()).append("\n");
-        currentItinerary.append("目的地：").append(itinerary.getDestinationCity()).append("\n");
+        currentItinerary.append("目的地：").append(itinerary.getDestination()).append("\n");
         currentItinerary.append("天数：").append(itinerary.getDays()).append("天\n\n");
 
         int currentDay = 0;
-        for (ItineraryItem item : items) {
-            if (item.getDayNumber() != currentDay) {
-                currentDay = item.getDayNumber();
+        for (ItineraryAttraction item : attractions) {
+            if (item.getDayNum() != currentDay) {
+                currentDay = item.getDayNum();
                 currentItinerary.append("第").append(currentDay).append("天：\n");
             }
-            currentItinerary.append("- ").append(item.getStartTime()).append(" ").append(item.getItemName())
-                    .append("（").append(item.getItemType()).append("，").append(item.getItemPrice()).append("元）\n");
+            currentItinerary.append("- ").append(item.getStartTime()).append(" ").append(item.getItemDesc())
+                    .append("（").append(item.getItemPrice()).append("元）\n");
         }
 
         String prompt = promptTemplate.modifyItineraryPrompt(itineraryId, currentItinerary.toString(), modifications);
@@ -141,35 +141,34 @@ public class AiServiceImpl implements AiService {
         JsonNode jsonNode = parseJsonResponse(response);
 
         ItineraryCreateDTO createDTO = new ItineraryCreateDTO();
-        createDTO.setDestinationCity(itinerary.getDestinationCity());
-        createDTO.setDepartureCity(itinerary.getDepartureCity());
+        createDTO.setDestination(itinerary.getDestination());
+        createDTO.setStartCity(itinerary.getStartCity());
         createDTO.setStartDate(itinerary.getStartDate());
         createDTO.setEndDate(itinerary.getEndDate());
-        createDTO.setBudget(itinerary.getBudget());
+        createDTO.setTotalBudget(itinerary.getTotalBudget());
         createDTO.setInterests(itinerary.getInterests());
 
-        List<ItineraryItemDTO> newItems = new ArrayList<>();
+        List<ItineraryItemDTO> newAttractions = new ArrayList<>();
         JsonNode daysNode = jsonNode.get("days");
         if (daysNode != null && daysNode.isArray()) {
             for (JsonNode dayNode : daysNode) {
-                int dayNumber = dayNode.has("dayNumber") ? dayNode.get("dayNumber").asInt() : 1;
+                int dayNum = dayNode.has("dayNumber") ? dayNode.get("dayNumber").asInt() : 1;
                 JsonNode itemsNode = dayNode.get("items");
                 if (itemsNode != null && itemsNode.isArray()) {
                     for (JsonNode itemNode : itemsNode) {
                         ItineraryItemDTO itemDTO = new ItineraryItemDTO();
-                        itemDTO.setDayNumber(dayNumber);
-                        itemDTO.setItemType(itemNode.has("itemType") ? itemNode.get("itemType").asText() : "ATTRACTIONS");
+                        itemDTO.setDayNum(dayNum);
                         itemDTO.setItemName(itemNode.has("itemName") ? itemNode.get("itemName").asText() : "");
                         itemDTO.setItemDesc(itemNode.has("itemDesc") ? itemNode.get("itemDesc").asText() : null);
                         itemDTO.setItemPrice(itemNode.has("itemPrice") ? BigDecimal.valueOf(itemNode.get("itemPrice").asDouble()) : BigDecimal.ZERO);
                         itemDTO.setStartTime(itemNode.has("startTime") ? itemNode.get("startTime").asText() : null);
                         itemDTO.setEndTime(itemNode.has("endTime") ? itemNode.get("endTime").asText() : null);
-                        newItems.add(itemDTO);
+                        newAttractions.add(itemDTO);
                     }
                 }
             }
         }
-        createDTO.setItems(newItems);
+        createDTO.setAttractions(newAttractions);
 
         return itineraryService.updateItinerary(userId, itineraryId, createDTO);
     }

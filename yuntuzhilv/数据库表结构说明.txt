@@ -1,0 +1,744 @@
+================================================================================
+              云途智旅 —— 数据库表结构说明书
+================================================================================
+数据库：travel_planner（MySQL 8.0+）
+字符集：utf8mb4
+排序规则：utf8mb4_general_ci
+说明：所有表均包含 is_deleted 软删除字段、create_time / update_time 时间戳字段
+
+
+================================================================================
+1. 系统用户表（sys_user）
+   记录系统注册游客、管理员账号信息
+================================================================================
+
+字段名              数据类型            约束 / 索引描述 / 示例
+(Field)             (Type)              (Constraints / Index / Example)
+─────────────────────────────────────────────────────────────────────────────
+user_id             BIGINT UNSIGNED     PRIMARY KEY, AUTO_INCREMENT
+                                        用户自增主键
+
+username            VARCHAR(50)         NOT NULL, UNIQUE KEY uk_username
+                                        登录用户名，不可重复
+
+password            VARCHAR(100)        NOT NULL
+                                        加密存储用户密码（BCrypt）
+
+email               VARCHAR(100)        NULL
+                                        用户绑定邮箱，如 "user@example.com"
+
+phone               VARCHAR(20)         NULL, UNIQUE KEY uk_phone
+                                        用户手机号，如 "13800138000"
+
+real_name           VARCHAR(50)         NULL
+                                        用户真实姓名 / 昵称
+
+avatar              VARCHAR(512)        NULL
+                                        用户头像图片访问地址
+
+role                VARCHAR(20)         NOT NULL, DEFAULT 'user'
+                                        角色：user 普通游客 / admin 管理员
+
+preferences         JSON                NULL
+                                        旅游偏好标签数组，如 ["美食","历史","自然"]
+
+max_budget          INT                 DEFAULT 0
+                                        用户人均预算上限（元）
+
+status              TINYINT             NOT NULL, DEFAULT 1
+                                        账号状态：1 正常，0 禁用
+
+is_deleted          TINYINT             NOT NULL, DEFAULT 0
+                                        软删除标记：0 未删除，1 已删除
+
+create_time         DATETIME            NOT NULL, DEFAULT CURRENT_TIMESTAMP
+                                        账号注册创建时间
+
+update_time         DATETIME            NOT NULL, DEFAULT CURRENT_TIMESTAMP
+                                        ON UPDATE CURRENT_TIMESTAMP
+                                        账号信息更新时间
+
+
+================================================================================
+2. 景点信息表（tb_attraction）
+   存储全部景点基础资料，用于前台浏览、AI 行程匹配、热门排行统计
+================================================================================
+
+字段名              数据类型            约束 / 索引描述 / 示例
+(Field)             (Type)              (Constraints / Index / Example)
+─────────────────────────────────────────────────────────────────────────────
+attraction_id       BIGINT UNSIGNED     PRIMARY KEY, AUTO_INCREMENT
+                                        景点自增主键
+
+name                VARCHAR(100)        NOT NULL
+                                        景点名称，如 "故宫博物院"
+
+city                VARCHAR(50)         NOT NULL, INDEX idx_city
+                                        景点所属城市，如 "北京"
+
+type                VARCHAR(50)         NOT NULL, INDEX idx_type
+                                        景点分类：自然风光 / 历史古迹 / 美食街区 /
+                                        主题乐园 / 文化体验 等
+
+price               DECIMAL(10,2)       NOT NULL, DEFAULT 0.00
+                                        景点门票单价（元），0.00 表示免费
+
+open_time           VARCHAR(50)         NOT NULL
+                                        景点每日开放时间段，如 "08:30-17:00"
+
+address             VARCHAR(255)        NOT NULL
+                                        景点详细地址
+
+description         TEXT                NULL
+                                        景点文字介绍
+
+img_url             VARCHAR(512)        NULL
+                                        后台上传景点封面图片访问地址
+
+score               DECIMAL(2,1)        DEFAULT 5.0
+                                        景点综合评分（1.0 ~ 5.0）
+
+visit_count         INT                 NOT NULL, DEFAULT 0
+                                        景点页面访问次数，用于热门排行
+
+longitude           DECIMAL(10,6)       NULL
+                                        景点经度坐标，如 116.397128
+
+latitude            DECIMAL(10,6)       NULL
+                                        景点纬度坐标，如 39.916527
+
+is_deleted          TINYINT             NOT NULL, DEFAULT 0
+                                        软删除标记：0 未删除，1 已删除
+
+create_time         DATETIME            NOT NULL, DEFAULT CURRENT_TIMESTAMP
+                                        景点录入时间
+
+update_time         DATETIME            NOT NULL, DEFAULT CURRENT_TIMESTAMP
+                                        ON UPDATE CURRENT_TIMESTAMP
+                                        景点信息修改时间
+
+
+================================================================================
+3. 酒店信息表（tb_hotel）
+   存储酒店资源数据，管理员后台维护，行程生成时自动匹配
+================================================================================
+
+字段名              数据类型            约束 / 索引描述 / 示例
+(Field)             (Type)              (Constraints / Index / Example)
+─────────────────────────────────────────────────────────────────────────────
+hotel_id            BIGINT UNSIGNED     PRIMARY KEY, AUTO_INCREMENT
+                                        酒店自增主键
+
+name                VARCHAR(100)        NOT NULL
+                                        酒店名称，如 "北京王府井大酒店"
+
+destination         VARCHAR(50)         NOT NULL, INDEX idx_destination
+                                        酒店所属城市，如 "北京"
+
+star                VARCHAR(20)         NOT NULL
+                                        酒店星级：二星 / 三星 / 四星 / 五星
+
+price               DECIMAL(10,2)       NOT NULL, DEFAULT 0.00
+                                        酒店单晚房价（元）
+
+address             VARCHAR(255)        NOT NULL
+                                        酒店详细地址
+
+description         TEXT                NULL
+                                        酒店文字介绍
+
+img_url             VARCHAR(512)        NULL
+                                        后台上传酒店封面图片地址
+
+stock               INT                 NOT NULL, DEFAULT 0
+                                        酒店剩余可预订房间数量
+
+phone               VARCHAR(20)         NULL
+                                        酒店联系电话
+
+facilities          VARCHAR(512)        NULL
+                                        酒店设施，JSON 数组格式
+                                        如 '["WiFi","停车场","游泳池"]'
+
+is_deleted          TINYINT             NOT NULL, DEFAULT 0
+                                        软删除标记：0 未删除，1 已删除
+
+create_time         DATETIME            NOT NULL, DEFAULT CURRENT_TIMESTAMP
+                                        酒店录入系统时间
+
+update_time         DATETIME            NOT NULL, DEFAULT CURRENT_TIMESTAMP
+                                        ON UPDATE CURRENT_TIMESTAMP
+                                        酒店信息更新时间
+
+
+================================================================================
+4. 城际交通资源表（tb_traffic）
+   记录城市之间出行交通方案，生成行程时搭配交通费用
+================================================================================
+
+字段名              数据类型            约束 / 索引描述 / 示例
+(Field)             (Type)              (Constraints / Index / Example)
+─────────────────────────────────────────────────────────────────────────────
+traffic_id          BIGINT UNSIGNED     PRIMARY KEY, AUTO_INCREMENT
+                                        交通记录自增主键
+
+start_city          VARCHAR(50)         NOT NULL, 联合索引 idx_route(start_city, end_city)
+                                        出发城市名称，如 "北京"
+
+end_city            VARCHAR(50)         NOT NULL, 联合索引 idx_route(start_city, end_city)
+                                        目的地城市名称，如 "上海"
+
+way                 VARCHAR(20)         NOT NULL
+                                        交通方式：高铁 / 飞机 / 大巴 / 自驾
+
+code                VARCHAR(20)         NULL
+                                        班次编号，如 "G1288" / "MU5101"
+
+cost                DECIMAL(10,2)       NOT NULL
+                                        单程交通票价（元）
+
+duration            VARCHAR(20)         NOT NULL
+                                        全程所需耗时，如 "4h 32m"
+
+depart_time         VARCHAR(20)         NULL
+                                        出发时间，如 "08:00"
+
+carrier             VARCHAR(50)         NULL
+                                        承运方，如 "中国铁路" / "东方航空"
+
+is_deleted          TINYINT             NOT NULL, DEFAULT 0
+                                        软删除标记：0 未删除，1 已删除
+
+create_time         DATETIME            NOT NULL, DEFAULT CURRENT_TIMESTAMP
+                                        交通数据录入时间
+
+update_time         DATETIME            NOT NULL, DEFAULT CURRENT_TIMESTAMP
+                                        ON UPDATE CURRENT_TIMESTAMP
+                                        交通信息修改时间
+
+
+================================================================================
+5. 行程主表（tb_itinerary）
+   存储用户 AI 生成 / 手动保存的完整行程头部基础信息
+================================================================================
+
+字段名              数据类型            约束 / 索引描述 / 示例
+(Field)             (Type)              (Constraints / Index / Example)
+─────────────────────────────────────────────────────────────────────────────
+itinerary_id        BIGINT UNSIGNED     PRIMARY KEY, AUTO_INCREMENT
+                                        行程自增主键
+
+user_id             BIGINT UNSIGNED     NOT NULL, INDEX idx_user_id
+                                        行程所属用户 ID，关联 sys_user.user_id
+
+title               VARCHAR(100)        NULL
+                                        行程标题，如 "北京3日文化之旅"
+
+start_city          VARCHAR(50)         NOT NULL
+                                        用户出发城市，如 "上海"
+
+destination         VARCHAR(50)         NOT NULL
+                                        旅游目的地城市，如 "北京"
+
+days                INT                 NOT NULL
+                                        总游玩天数，如 3
+
+start_date          DATE                NULL
+                                        行程出发日期，如 "2026-08-01"
+
+end_date            DATE                NULL
+                                        行程结束日期，如 "2026-08-03"
+
+total_budget        DECIMAL(10,2)       NOT NULL, DEFAULT 0.00
+                                        行程全部预估总花费（元）
+
+total_cost          DECIMAL(10,2)       DEFAULT 0.00
+                                        行程实际总花费（元）
+
+interests           VARCHAR(255)        NULL
+                                        兴趣标签，逗号分隔，如 "历史,美食,自然"
+
+travel_tips         TEXT                NULL
+                                        AI 生成的出行贴士、游玩建议
+
+people              INT                 DEFAULT 1
+                                        出行人数
+
+status              VARCHAR(20)         NOT NULL, DEFAULT 'planned'
+                                        行程状态：planned 计划中 / active 进行中 /
+                                        completed 已完成
+
+is_temp             TINYINT             NOT NULL, DEFAULT 1
+                                        是否临时未保存行程：1 临时，0 永久保存
+
+is_archived         TINYINT             NOT NULL, DEFAULT 0
+                                        是否已归档：0 未归档，1 已归档
+                                        （已过期的行程自动归档，不可编辑）
+
+is_deleted          TINYINT             NOT NULL, DEFAULT 0
+                                        软删除标记：0 未删除，1 已删除
+
+create_time         DATETIME            NOT NULL, DEFAULT CURRENT_TIMESTAMP
+                                        行程生成时间
+
+update_time         DATETIME            NOT NULL, DEFAULT CURRENT_TIMESTAMP
+                                        ON UPDATE CURRENT_TIMESTAMP
+                                        行程修改更新时间
+
+
+================================================================================
+6. 行程每日明细表（tb_itinerary_detail）
+   拆分行程每日游玩节点，存储每日景点、酒店、交通费用明细
+================================================================================
+
+字段名              数据类型            约束 / 索引描述 / 示例
+(Field)             (Type)              (Constraints / Index / Example)
+─────────────────────────────────────────────────────────────────────────────
+detail_id           BIGINT UNSIGNED     PRIMARY KEY, AUTO_INCREMENT
+                                        明细自增主键
+
+itinerary_id        BIGINT UNSIGNED     NOT NULL, INDEX idx_itinerary_id
+                                        关联所属行程 ID，关联 tb_itinerary.itinerary_id
+
+day_num             INT                 NOT NULL
+                                        游玩第几天，从 1 开始
+
+item_type           VARCHAR(20)         NOT NULL
+                                        节点类型：attraction 景点 / hotel 酒店 /
+                                        traffic 交通 / food 餐饮
+
+item_id             BIGINT UNSIGNED     NULL
+                                        关联资源 ID（景点ID / 酒店ID / 交通ID）
+
+item_name           VARCHAR(100)        NULL
+                                        资源名称，如 "故宫博物院" / "全聚德烤鸭店"
+
+item_desc           VARCHAR(512)        NULL
+                                        节点描述 / 备注
+
+item_price          DECIMAL(10,2)       DEFAULT 0.00
+                                        该节点花费（门票 / 房费 / 交通费）
+
+start_time          VARCHAR(20)         NULL
+                                        开始时间，如 "09:00"
+
+end_time            VARCHAR(20)         NULL
+                                        结束时间，如 "12:00"
+
+order_num           INT                 DEFAULT 0
+                                        当日内的排序序号，升序排列
+
+is_deleted          TINYINT             NOT NULL, DEFAULT 0
+                                        软删除标记：0 未删除，1 已删除
+
+create_time         DATETIME            NOT NULL, DEFAULT CURRENT_TIMESTAMP
+                                        明细创建时间
+
+update_time         DATETIME            NOT NULL, DEFAULT CURRENT_TIMESTAMP
+                                        ON UPDATE CURRENT_TIMESTAMP
+                                        明细修改时间
+
+
+================================================================================
+7. 模拟预订订单表（tb_booking_order）
+   记录用户对酒店 / 景点的预订动作（不对接真实支付）
+================================================================================
+
+字段名              数据类型            约束 / 索引描述 / 示例
+(Field)             (Type)              (Constraints / Index / Example)
+─────────────────────────────────────────────────────────────────────────────
+order_id            VARCHAR(32)         PRIMARY KEY
+                                        订单号，如 "ORD202607200001"
+
+user_id             BIGINT UNSIGNED     NOT NULL, INDEX idx_user_id
+                                        下单用户 ID，关联 sys_user.user_id
+
+itinerary_id        BIGINT UNSIGNED     NOT NULL
+                                        关联行程 ID，关联 tb_itinerary.itinerary_id
+
+resource_type       VARCHAR(20)         NOT NULL
+                                        资源类型：attraction 景点 / hotel 酒店
+
+resource_id         BIGINT UNSIGNED     NOT NULL
+                                        预订资源 ID（景点ID 或 酒店ID）
+
+resource_name       VARCHAR(100)        NULL
+                                        预订资源名称，便于展示
+
+quantity            INT                 DEFAULT 1
+                                        预订数量（门票张数 / 房间数）
+
+total_price         DECIMAL(10,2)       NOT NULL, DEFAULT 0.00
+                                        订单总金额（元）
+
+check_in            VARCHAR(20)         NULL
+                                        酒店入住日期，如 "2026-08-01"
+
+check_out           VARCHAR(20)         NULL
+                                        酒店离店日期，如 "2026-08-03"
+
+order_status        VARCHAR(20)         NOT NULL, DEFAULT '待支付'
+                                        订单状态：待支付 / 已完成 / 已取消
+
+is_deleted          TINYINT             NOT NULL, DEFAULT 0
+                                        软删除标记：0 未删除，1 已删除
+
+create_time         DATETIME            NOT NULL, DEFAULT CURRENT_TIMESTAMP
+                                        订单创建时间
+
+
+================================================================================
+8. 系统操作日志表（sys_log）
+   记录管理员、用户关键操作，用于行为追溯、故障排查
+================================================================================
+
+字段名              数据类型            约束 / 索引描述 / 示例
+(Field)             (Type)              (Constraints / Index / Example)
+─────────────────────────────────────────────────────────────────────────────
+log_id              BIGINT UNSIGNED     PRIMARY KEY, AUTO_INCREMENT
+                                        日志自增主键
+
+operator_id         BIGINT UNSIGNED     NOT NULL
+                                        操作人用户 ID，关联 sys_user.user_id
+
+username            VARCHAR(50)         NULL
+                                        操作人用户名（冗余存储，便于查询展示）
+
+operator_type       VARCHAR(50)         NOT NULL, INDEX idx_operator_type
+                                        操作类型：add / update / delete / login /
+                                        generate / export 等
+
+module              VARCHAR(50)         NULL
+                                        操作模块：attraction / hotel / traffic /
+                                        user / itinerary 等
+
+ip                  VARCHAR(50)         NULL
+                                        操作客户端 IP 地址
+
+content             TEXT                NULL
+                                        操作详细描述内容，如 "新增景点：故宫博物院"
+
+request_params      TEXT                NULL
+                                        请求参数（JSON 格式）
+
+response_result     TEXT                NULL
+                                        响应结果摘要
+
+status              VARCHAR(20)         DEFAULT 'success'
+                                        操作状态：success / fail
+
+error_message       TEXT                NULL
+                                        异常信息（操作失败时记录）
+
+execution_time      INT                 DEFAULT 0
+                                        接口执行耗时（毫秒）
+
+create_time         DATETIME            NOT NULL, DEFAULT CURRENT_TIMESTAMP
+                                        操作日志记录时间
+
+
+================================================================================
+9. 用户足迹表（tb_footprint）
+   记录用户到访城市和景点的旅行足迹，用于"我的足迹"页面展示
+================================================================================
+
+字段名              数据类型            约束 / 索引描述 / 示例
+(Field)             (Type)              (Constraints / Index / Example)
+─────────────────────────────────────────────────────────────────────────────
+footprint_id        BIGINT UNSIGNED     PRIMARY KEY, AUTO_INCREMENT
+                                        足迹自增主键
+
+user_id             BIGINT UNSIGNED     NOT NULL, INDEX idx_user_id
+                                        用户 ID，关联 sys_user.user_id
+
+attraction_id       BIGINT UNSIGNED     NOT NULL
+                                        景点 ID，关联 tb_attraction.attraction_id
+
+city_name           VARCHAR(50)         NOT NULL, INDEX idx_city
+                                        到访城市名称（冗余存储，便于按城市分组）
+
+visit_date          DATE                NOT NULL
+                                        到访日期，如 "2026-07-20"
+
+rating              TINYINT             NULL
+                                        用户评分 1~5
+
+comment             VARCHAR(512)        NULL
+                                        用户评语
+
+is_deleted          TINYINT             NOT NULL, DEFAULT 0
+                                        软删除标记：0 未删除，1 已删除
+
+create_time         DATETIME            NOT NULL, DEFAULT CURRENT_TIMESTAMP
+                                        足迹创建时间
+
+
+================================================================================
+10. 意见反馈表（tb_feedback）
+    收集用户对系统的意见反馈，管理员后台查看并处理
+================================================================================
+
+字段名              数据类型            约束 / 索引描述 / 示例
+(Field)             (Type)              (Constraints / Index / Example)
+─────────────────────────────────────────────────────────────────────────────
+feedback_id         BIGINT UNSIGNED     PRIMARY KEY, AUTO_INCREMENT
+                                        反馈自增主键
+
+user_id             BIGINT UNSIGNED     DEFAULT 0
+                                        提交反馈的用户 ID，0 表示未登录用户
+
+username            VARCHAR(50)         NULL
+                                        提交反馈的用户名（未登录用户可手动填写）
+
+content             TEXT                NOT NULL
+                                        反馈内容
+
+status              TINYINT             NOT NULL, DEFAULT 0
+                                        处理状态：0 待处理，1 已处理
+
+is_deleted          TINYINT             NOT NULL, DEFAULT 0
+                                        软删除标记：0 未删除，1 已删除
+
+create_time         DATETIME            NOT NULL, DEFAULT CURRENT_TIMESTAMP
+                                        反馈提交时间
+
+update_time         DATETIME            NOT NULL, DEFAULT CURRENT_TIMESTAMP
+                                        ON UPDATE CURRENT_TIMESTAMP
+                                        反馈状态更新时间
+
+
+================================================================================
+                          表间关系说明
+================================================================================
+
+sys_user (1) ──── (N) tb_itinerary          一个用户可以创建多个行程
+sys_user (1) ──── (N) tb_booking_order      一个用户可以有多个预订订单
+sys_user (1) ──── (N) tb_footprint          一个用户可以有多条足迹
+sys_user (1) ──── (N) tb_feedback           一个用户可以提交多条反馈
+sys_user (1) ──── (N) sys_log               一个用户可以有多条操作日志
+
+tb_itinerary (1) ── (N) tb_itinerary_detail 一个行程包含多条每日明细
+tb_itinerary (1) ── (N) tb_booking_order    一个行程可以关联多个预订订单
+
+tb_attraction (1) ── (N) tb_itinerary_detail  一个景点可出现在多个行程明细中
+tb_attraction (1) ── (N) tb_footprint         一个景点可被多个用户打卡
+
+tb_hotel (1) ── (N) tb_itinerary_detail    一个酒店可出现在多个行程明细中
+tb_hotel (1) ── (N) tb_booking_order       一个酒店可以有多个预订订单
+
+
+================================================================================
+                          索引汇总
+================================================================================
+
+表名                索引名                    类型        字段
+─────────────────────────────────────────────────────────────────────────────
+sys_user            uk_username               UNIQUE      username
+sys_user            uk_phone                  UNIQUE      phone
+
+tb_attraction       idx_city                  NORMAL      city
+tb_attraction       idx_type                  NORMAL      type
+
+tb_hotel            idx_destination           NORMAL      destination
+
+tb_traffic          idx_route                 COMPOSITE   start_city, end_city
+
+tb_itinerary        idx_user_id               NORMAL      user_id
+
+tb_itinerary_detail idx_itinerary_id          NORMAL      itinerary_id
+
+tb_booking_order    idx_user_id               NORMAL      user_id
+
+tb_footprint        idx_user_id               NORMAL      user_id
+tb_footprint        idx_city                  NORMAL      city_name
+
+sys_log             idx_operator_type         NORMAL      operator_type
+
+
+================================================================================
+                     建表 SQL 语句（可直接执行）
+================================================================================
+
+-- 1. 系统用户表
+CREATE TABLE sys_user (
+    user_id       BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '用户主键',
+    username      VARCHAR(50)      NOT NULL COMMENT '登录用户名',
+    password      VARCHAR(100)     NOT NULL COMMENT '加密密码(BCrypt)',
+    email         VARCHAR(100)     NULL COMMENT '绑定邮箱',
+    phone         VARCHAR(20)      NULL COMMENT '手机号',
+    real_name     VARCHAR(50)      NULL COMMENT '真实姓名/昵称',
+    avatar        VARCHAR(512)     NULL COMMENT '头像图片地址',
+    role          VARCHAR(20)      NOT NULL DEFAULT 'user' COMMENT '角色: user/admin',
+    preferences   JSON             NULL COMMENT '旅游偏好标签数组',
+    max_budget    INT              NOT NULL DEFAULT 0 COMMENT '人均预算上限(元)',
+    status        TINYINT          NOT NULL DEFAULT 1 COMMENT '状态: 1正常 0禁用',
+    is_deleted    TINYINT          NOT NULL DEFAULT 0 COMMENT '软删除: 0未删 1已删',
+    create_time   DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time   DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    UNIQUE KEY uk_username (username),
+    UNIQUE KEY uk_phone (phone)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='系统用户表';
+
+-- 2. 景点信息表
+CREATE TABLE tb_attraction (
+    attraction_id BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '景点主键',
+    name          VARCHAR(100)     NOT NULL COMMENT '景点名称',
+    city          VARCHAR(50)      NOT NULL COMMENT '所属城市',
+    type          VARCHAR(50)      NOT NULL COMMENT '景点分类',
+    price         DECIMAL(10,2)    NOT NULL DEFAULT 0.00 COMMENT '门票单价(元)',
+    open_time     VARCHAR(50)      NOT NULL COMMENT '开放时间',
+    address       VARCHAR(255)     NOT NULL COMMENT '详细地址',
+    description   TEXT             NULL COMMENT '景点介绍',
+    img_url       VARCHAR(512)     NULL COMMENT '封面图片地址',
+    score         DECIMAL(2,1)     DEFAULT 5.0 COMMENT '综合评分(1.0~5.0)',
+    visit_count   INT              NOT NULL DEFAULT 0 COMMENT '访问次数(热门排行)',
+    longitude     DECIMAL(10,6)    NULL COMMENT '经度',
+    latitude      DECIMAL(10,6)    NULL COMMENT '纬度',
+    is_deleted    TINYINT          NOT NULL DEFAULT 0 COMMENT '软删除: 0未删 1已删',
+    create_time   DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time   DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_city (city),
+    INDEX idx_type (type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='景点信息表';
+
+-- 3. 酒店信息表
+CREATE TABLE tb_hotel (
+    hotel_id      BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '酒店主键',
+    name          VARCHAR(100)     NOT NULL COMMENT '酒店名称',
+    destination   VARCHAR(50)      NOT NULL COMMENT '所属城市',
+    star          VARCHAR(20)      NOT NULL COMMENT '星级: 二星/三星/四星/五星',
+    price         DECIMAL(10,2)    NOT NULL DEFAULT 0.00 COMMENT '单晚房价(元)',
+    address       VARCHAR(255)     NOT NULL COMMENT '详细地址',
+    description   TEXT             NULL COMMENT '酒店介绍',
+    img_url       VARCHAR(512)     NULL COMMENT '封面图片地址',
+    stock         INT              NOT NULL DEFAULT 0 COMMENT '剩余可预订房间数',
+    phone         VARCHAR(20)      NULL COMMENT '联系电话',
+    facilities    VARCHAR(512)     NULL COMMENT '设施(JSON数组)',
+    is_deleted    TINYINT          NOT NULL DEFAULT 0 COMMENT '软删除: 0未删 1已删',
+    create_time   DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time   DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_destination (destination)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='酒店信息表';
+
+-- 4. 城际交通资源表
+CREATE TABLE tb_traffic (
+    traffic_id    BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '交通主键',
+    start_city    VARCHAR(50)      NOT NULL COMMENT '出发城市',
+    end_city      VARCHAR(50)      NOT NULL COMMENT '目的城市',
+    way           VARCHAR(20)      NOT NULL COMMENT '交通方式: 高铁/飞机/大巴/自驾',
+    code          VARCHAR(20)      NULL COMMENT '班次编号',
+    cost          DECIMAL(10,2)    NOT NULL COMMENT '单程票价(元)',
+    duration      VARCHAR(20)      NOT NULL COMMENT '全程耗时',
+    depart_time   VARCHAR(20)      NULL COMMENT '出发时间',
+    carrier       VARCHAR(50)      NULL COMMENT '承运方',
+    is_deleted    TINYINT          NOT NULL DEFAULT 0 COMMENT '软删除: 0未删 1已删',
+    create_time   DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time   DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_route (start_city, end_city)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='城际交通资源表';
+
+-- 5. 行程主表
+CREATE TABLE tb_itinerary (
+    itinerary_id  BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '行程主键',
+    user_id       BIGINT UNSIGNED  NOT NULL COMMENT '所属用户ID',
+    title         VARCHAR(100)     NULL COMMENT '行程标题',
+    start_city    VARCHAR(50)      NOT NULL COMMENT '出发城市',
+    destination   VARCHAR(50)      NOT NULL COMMENT '目的城市',
+    days          INT              NOT NULL COMMENT '总游玩天数',
+    start_date    DATE             NULL COMMENT '出发日期',
+    end_date      DATE             NULL COMMENT '结束日期',
+    total_budget  DECIMAL(10,2)    NOT NULL DEFAULT 0.00 COMMENT '预估总花费(元)',
+    total_cost    DECIMAL(10,2)    DEFAULT 0.00 COMMENT '实际总花费(元)',
+    interests     VARCHAR(255)     NULL COMMENT '兴趣标签(逗号分隔)',
+    travel_tips   TEXT             NULL COMMENT 'AI出行贴士',
+    people        INT              DEFAULT 1 COMMENT '出行人数',
+    status        VARCHAR(20)      NOT NULL DEFAULT 'planned' COMMENT '状态: planned/active/completed',
+    is_temp       TINYINT          NOT NULL DEFAULT 1 COMMENT '是否临时: 1临时 0永久',
+    is_archived   TINYINT          NOT NULL DEFAULT 0 COMMENT '是否归档: 0未归档 1已归档',
+    is_deleted    TINYINT          NOT NULL DEFAULT 0 COMMENT '软删除: 0未删 1已删',
+    create_time   DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time   DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='行程主表';
+
+-- 6. 行程每日明细表
+CREATE TABLE tb_itinerary_detail (
+    detail_id     BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '明细主键',
+    itinerary_id  BIGINT UNSIGNED  NOT NULL COMMENT '所属行程ID',
+    day_num       INT              NOT NULL COMMENT '第几天(从1开始)',
+    item_type     VARCHAR(20)      NOT NULL COMMENT '节点类型: attraction/hotel/traffic/food',
+    item_id       BIGINT UNSIGNED  NULL COMMENT '关联资源ID',
+    item_name     VARCHAR(100)     NULL COMMENT '资源名称',
+    item_desc     VARCHAR(512)     NULL COMMENT '节点描述/备注',
+    item_price    DECIMAL(10,2)    DEFAULT 0.00 COMMENT '该节点花费(元)',
+    start_time    VARCHAR(20)      NULL COMMENT '开始时间',
+    end_time      VARCHAR(20)      NULL COMMENT '结束时间',
+    order_num     INT              DEFAULT 0 COMMENT '当日排序序号',
+    is_deleted    TINYINT          NOT NULL DEFAULT 0 COMMENT '软删除: 0未删 1已删',
+    create_time   DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time   DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_itinerary_id (itinerary_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='行程每日明细表';
+
+-- 7. 模拟预订订单表
+CREATE TABLE tb_booking_order (
+    order_id      VARCHAR(32)      NOT NULL PRIMARY KEY COMMENT '订单号',
+    user_id       BIGINT UNSIGNED  NOT NULL COMMENT '下单用户ID',
+    itinerary_id  BIGINT UNSIGNED  NOT NULL COMMENT '关联行程ID',
+    resource_type VARCHAR(20)      NOT NULL COMMENT '资源类型: attraction/hotel',
+    resource_id   BIGINT UNSIGNED  NOT NULL COMMENT '预订资源ID',
+    resource_name VARCHAR(100)     NULL COMMENT '预订资源名称',
+    quantity      INT              DEFAULT 1 COMMENT '预订数量',
+    total_price   DECIMAL(10,2)    NOT NULL DEFAULT 0.00 COMMENT '订单总金额(元)',
+    check_in      VARCHAR(20)      NULL COMMENT '酒店入住日期',
+    check_out     VARCHAR(20)      NULL COMMENT '酒店离店日期',
+    order_status  VARCHAR(20)      NOT NULL DEFAULT '待支付' COMMENT '状态: 待支付/已完成/已取消',
+    is_deleted    TINYINT          NOT NULL DEFAULT 0 COMMENT '软删除: 0未删 1已删',
+    create_time   DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    INDEX idx_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='模拟预订订单表';
+
+-- 8. 系统操作日志表
+CREATE TABLE sys_log (
+    log_id        BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '日志主键',
+    operator_id   BIGINT UNSIGNED  NOT NULL COMMENT '操作人用户ID',
+    username      VARCHAR(50)      NULL COMMENT '操作人用户名',
+    operator_type VARCHAR(50)      NOT NULL COMMENT '操作类型: add/update/delete/login等',
+    module        VARCHAR(50)      NULL COMMENT '操作模块',
+    ip            VARCHAR(50)      NULL COMMENT '客户端IP',
+    content       TEXT             NULL COMMENT '操作描述',
+    request_params TEXT            NULL COMMENT '请求参数(JSON)',
+    response_result TEXT           NULL COMMENT '响应结果摘要',
+    status        VARCHAR(20)      DEFAULT 'success' COMMENT '状态: success/fail',
+    error_message TEXT             NULL COMMENT '异常信息',
+    execution_time INT             DEFAULT 0 COMMENT '执行耗时(毫秒)',
+    create_time   DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '记录时间',
+    INDEX idx_operator_type (operator_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='系统操作日志表';
+
+-- 9. 用户足迹表
+CREATE TABLE tb_footprint (
+    footprint_id  BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '足迹主键',
+    user_id       BIGINT UNSIGNED  NOT NULL COMMENT '用户ID',
+    attraction_id BIGINT UNSIGNED  NOT NULL COMMENT '景点ID',
+    city_name     VARCHAR(50)      NOT NULL COMMENT '到访城市名称',
+    visit_date    DATE             NOT NULL COMMENT '到访日期',
+    rating        TINYINT          NULL COMMENT '用户评分(1~5)',
+    comment       VARCHAR(512)     NULL COMMENT '用户评语',
+    is_deleted    TINYINT          NOT NULL DEFAULT 0 COMMENT '软删除: 0未删 1已删',
+    create_time   DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    INDEX idx_user_id (user_id),
+    INDEX idx_city (city_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='用户足迹表';
+
+-- 10. 意见反馈表
+CREATE TABLE tb_feedback (
+    feedback_id   BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '反馈主键',
+    user_id       BIGINT UNSIGNED  DEFAULT 0 COMMENT '用户ID(0表示未登录)',
+    username      VARCHAR(50)      NULL COMMENT '用户名',
+    content       TEXT             NOT NULL COMMENT '反馈内容',
+    status        TINYINT          NOT NULL DEFAULT 0 COMMENT '状态: 0待处理 1已处理',
+    is_deleted    TINYINT          NOT NULL DEFAULT 0 COMMENT '软删除: 0未删 1已删',
+    create_time   DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '提交时间',
+    update_time   DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='意见反馈表';

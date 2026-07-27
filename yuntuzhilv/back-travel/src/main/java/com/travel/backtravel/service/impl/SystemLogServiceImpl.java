@@ -29,10 +29,10 @@ public class SystemLogServiceImpl implements SystemLogService {
             wrapper.eq(SystemLog::getModule, module);
         }
         if (StringUtils.hasText(operation)) {
-            wrapper.eq(SystemLog::getOperation, operation);
+            wrapper.eq(SystemLog::getOperatorType, operation);
         }
 
-        wrapper.orderByDesc(SystemLog::getCreatedAt);
+        wrapper.orderByDesc(SystemLog::getCreateTime);
         return systemLogMapper.selectPage(page, wrapper);
     }
 }

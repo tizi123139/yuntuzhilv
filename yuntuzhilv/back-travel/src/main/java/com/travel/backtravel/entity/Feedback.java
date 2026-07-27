@@ -8,29 +8,17 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("sys_user")
-public class User {
+@TableName("tb_feedback")
+public class Feedback {
 
     @TableId(type = IdType.AUTO)
+    private Long feedbackId;
+
     private Long userId;
 
     private String username;
 
-    private String password;
-
-    private String email;
-
-    private String phone;
-
-    private String realName;
-
-    private String avatar;
-
-    private String role;
-
-    private String preferences;
-
-    private Integer maxBudget;
+    private String content;
 
     private Integer status;
 

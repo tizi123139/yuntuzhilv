@@ -8,21 +8,21 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("system_log")
+@TableName("sys_log")
 public class SystemLog {
 
     @TableId(type = IdType.AUTO)
-    private Long id;
+    private Long logId;
 
-    private Long userId;
+    private Long operatorId;
 
-    private String username;
-
-    private String operation;
+    private String operatorType;
 
     private String module;
 
     private String ipAddress;
+
+    private String content;
 
     private String requestParams;
 
@@ -34,5 +34,5 @@ public class SystemLog {
 
     private Integer executionTime;
 
-    private LocalDateTime createdAt;
+    private LocalDateTime createTime;
 }

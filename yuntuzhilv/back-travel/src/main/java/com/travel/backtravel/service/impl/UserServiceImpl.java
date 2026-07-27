@@ -91,10 +91,10 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException("账号已被禁用");
         }
 
-        String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole());
-        String refreshToken = jwtUtil.generateRefreshToken(user.getId(), user.getUsername());
+        String token = jwtUtil.generateToken(user.getUserId(), user.getUsername(), user.getRole());
+        String refreshToken = jwtUtil.generateRefreshToken(user.getUserId(), user.getUsername());
 
-        redisUtil.set("refresh_token:" + user.getId(), refreshToken, 7, TimeUnit.DAYS);
+        redisUtil.set("refresh_token:" + user.getUserId(), refreshToken, 7, TimeUnit.DAYS);
 
         LoginVO loginVO = new LoginVO();
         loginVO.setToken(token);
@@ -118,7 +118,7 @@ public class UserServiceImpl implements UserService {
         }
 
         UserInfoVO vo = new UserInfoVO();
-        vo.setUserId(user.getId());
+        vo.setUserId(user.getUserId());
         vo.setUsername(user.getUsername());
         vo.setAvatar(user.getAvatar() != null ? user.getAvatar() : "");
         vo.setBio(user.getRealName() != null ? user.getRealName() : "");
@@ -194,7 +194,7 @@ public class UserServiceImpl implements UserService {
             wrapper.like(User::getUsername, username);
         }
 
-        wrapper.orderByDesc(User::getCreatedAt);
+        wrapper.orderByDesc(User::getCreateTime);
         Page<User> resultPage = userMapper.selectPage(page, wrapper);
 
         List<UserVO> records = resultPage.getRecords().stream()
@@ -242,7 +242,7 @@ public class UserServiceImpl implements UserService {
 
     private UserVO convertToVO(User user) {
         UserVO vo = new UserVO();
-        vo.setUserId(user.getId());
+        vo.setUserId(user.getUserId());
         vo.setUsername(user.getUsername());
         vo.setEmail(user.getEmail());
         vo.setPhone(user.getPhone());
@@ -251,7 +251,7 @@ public class UserServiceImpl implements UserService {
         vo.setRole(user.getRole());
         vo.setPreferences(user.getPreferences());
         vo.setStatus(user.getStatus());
-        vo.setCreateTime(user.getCreatedAt());
+        vo.setCreateTime(user.getCreateTime());
         return vo;
     }
 }

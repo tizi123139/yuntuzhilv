@@ -5,34 +5,31 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("sys_user")
-public class User {
+@TableName("tb_itinerary_hotel")
+public class ItineraryHotel {
 
     @TableId(type = IdType.AUTO)
-    private Long userId;
+    private Long detailId;
 
-    private String username;
+    private String itineraryId;
 
-    private String password;
+    private Integer dayNum;
 
-    private String email;
+    private Integer orderNum;
 
-    private String phone;
+    private String hotelId;
 
-    private String realName;
+    private BigDecimal itemPrice;
 
-    private String avatar;
+    private String checkInTime;
 
-    private String role;
+    private String checkOutTime;
 
-    private String preferences;
-
-    private Integer maxBudget;
-
-    private Integer status;
+    private String itemDesc;
 
     private Integer isDeleted;
 

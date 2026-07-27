@@ -7,5 +7,5 @@ public interface AiService {
 
     ItineraryVO generateItinerary(Long userId, AiPlanDTO dto);
 
-    ItineraryVO modifyItinerary(Long userId, Long itineraryId, String modifications);
+    ItineraryVO modifyItinerary(Long userId, String itineraryId, String modifications);
 }

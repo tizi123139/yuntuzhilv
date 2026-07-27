@@ -10,37 +10,45 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("itinerary")
+@TableName("tb_itinerary")
 public class Itinerary {
 
-    @TableId(type = IdType.AUTO)
-    private Long id;
+    @TableId(type = IdType.INPUT)
+    private String itineraryId;
 
     private Long userId;
 
     private String title;
 
-    private String departureCity;
+    private String startCity;
 
-    private String destinationCity;
+    private String destination;
+
+    private Integer days;
 
     private LocalDate startDate;
 
     private LocalDate endDate;
 
-    private Integer days;
-
-    private BigDecimal budget;
-
-    private String interests;
+    private BigDecimal totalBudget;
 
     private BigDecimal totalCost;
 
+    private String interests;
+
+    private String travelTips;
+
+    private Integer people;
+
     private String status;
+
+    private Integer isTemp;
 
     private Integer isArchived;
 
-    private LocalDateTime createdAt;
+    private Integer isDeleted;
 
-    private LocalDateTime updatedAt;
+    private LocalDateTime createTime;
+
+    private LocalDateTime updateTime;
 }

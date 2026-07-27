@@ -3,30 +3,23 @@ package com.travel.backtravel.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.travel.backtravel.dto.BookingCreateDTO;
 import com.travel.backtravel.dto.ItineraryCreateDTO;
-import com.travel.backtravel.dto.ItineraryItemDTO;
 import com.travel.backtravel.vo.ItineraryVO;
 
 public interface ItineraryService {
 
     ItineraryVO createItinerary(Long userId, ItineraryCreateDTO dto);
 
-    ItineraryVO getItineraryById(Long userId, Long itineraryId);
+    ItineraryVO getItineraryById(Long userId, String itineraryId);
 
     Page<ItineraryVO> getUserItineraries(Long userId, Integer pageNum, Integer pageSize);
 
-    ItineraryVO updateItinerary(Long userId, Long itineraryId, ItineraryCreateDTO dto);
+    ItineraryVO updateItinerary(Long userId, String itineraryId, ItineraryCreateDTO dto);
 
-    void deleteItinerary(Long userId, Long itineraryId);
+    void deleteItinerary(Long userId, String itineraryId);
 
-    ItineraryVO addItem(Long userId, Long itineraryId, ItineraryItemDTO dto);
+    void archiveItinerary(Long userId, String itineraryId);
 
-    ItineraryVO updateItem(Long userId, Long itineraryId, Long itemId, ItineraryItemDTO dto);
+    String exportToPdf(Long userId, String itineraryId);
 
-    ItineraryVO removeItem(Long userId, Long itineraryId, Long itemId);
-
-    void archiveItinerary(Long userId, Long itineraryId);
-
-    String exportToPdf(Long userId, Long itineraryId);
-
-    void bookItem(Long userId, BookingCreateDTO dto);
+    void createBooking(Long userId, BookingCreateDTO dto);
 }

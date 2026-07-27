@@ -1,5 +1,6 @@
 package com.travel.backtravel.vo;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -10,13 +11,13 @@ import java.util.List;
 @Data
 public class ItineraryVO {
 
-    private Long id;
+    private String itineraryId;
 
     private String title;
 
-    private String departureCity;
+    private String startCity;
 
-    private String destinationCity;
+    private String destination;
 
     private LocalDate startDate;
 
@@ -24,17 +25,28 @@ public class ItineraryVO {
 
     private Integer days;
 
-    private BigDecimal budget;
-
-    private String interests;
+    private BigDecimal totalBudget;
 
     private BigDecimal totalCost;
 
+    private String interests;
+
+    private String travelTips;
+
+    private Integer people;
+
     private String status;
+
+    private Integer isTemp;
 
     private Integer isArchived;
 
-    private LocalDateTime createdAt;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime createTime;
 
-    private List<ItineraryItemVO> items;
+    private List<ItineraryItemVO> attractions;
+
+    private List<ItineraryItemVO> hotels;
+
+    private List<ItineraryItemVO> traffics;
 }

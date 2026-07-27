@@ -34,7 +34,7 @@ public class AiController {
 
     @PostMapping("/modify/{itineraryId}")
     public ResultUtil<ItineraryVO> modifyItinerary(
-            @PathVariable Long itineraryId,
+            @PathVariable String itineraryId,
             @RequestBody Map<String, String> request) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Long userId = (Long) auth.getPrincipal();

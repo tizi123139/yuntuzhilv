@@ -6,25 +6,22 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Data
-@TableName("itinerary_item")
-public class ItineraryItem {
+@TableName("tb_itinerary_traffic")
+public class ItineraryTraffic {
 
     @TableId(type = IdType.AUTO)
-    private Long id;
+    private Long detailId;
 
-    private Long itineraryId;
+    private String itineraryId;
 
-    private Integer dayNumber;
+    private Integer dayNum;
 
-    private String itemType;
+    private Integer orderNum;
 
-    private Long itemId;
-
-    private String itemName;
-
-    private String itemDesc;
+    private String trafficId;
 
     private BigDecimal itemPrice;
 
@@ -32,5 +29,11 @@ public class ItineraryItem {
 
     private String endTime;
 
-    private Integer orderNum;
+    private String itemDesc;
+
+    private Integer isDeleted;
+
+    private LocalDateTime createTime;
+
+    private LocalDateTime updateTime;
 }
