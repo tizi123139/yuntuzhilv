@@ -213,7 +213,7 @@ function handleDelete(item) {
  */
 async function confirmDelete() {
   try {
-    await deleteHotelApi({ hotelId: deleteTarget.value.hotelId })
+    await deleteHotelApi({ id: deleteTarget.value.hotelId })
     confirmVisible.value = false
     loadList()
   } catch (e) {

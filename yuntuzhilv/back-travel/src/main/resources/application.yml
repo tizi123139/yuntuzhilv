@@ -4,10 +4,13 @@ server:
     context-path: /api
 
 spring:
+  profiles:
+    active: local
+
   datasource:
     url: jdbc:mysql://localhost:3306/smart_travel?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
-    username: root
-    password: root
+    username: tizi1234
+    password: Tizi6666
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       minimum-idle: 5
@@ -35,22 +38,54 @@ mybatis-plus:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.travel.backtravel.entity
+  type-handlers-package: com.travel.backtravel.handler
+  global-config:
+    db-config:
+      insert-strategy: always
+      update-strategy: always
 
 jwt:
   secret: travel-planner-jwt-secret-key-2024-must-be-at-least-256-bits-long
   expiration: 86400000
   refresh-expiration: 604800000
 
-langchain:
-  qwen:
-    api-key: your-qwen-api-key
-    base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
-  chroma:
-    host: localhost
-    port: 8000
-    collection-name: travel-knowledge
-
 logging:
   level:
     com.travel.backtravel: DEBUG
     org.mybatis: DEBUG
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+
+# 当前使用阿里云百炼大模型
+ai:
+  provider: pai
+  pai:
+    api-key: 
+    base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+    model: qwen-plus
+    embedding-model: text-embedding-v2
+    timeout: 120000
+    max-tokens: 2048
+    temperature: 0.7
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+ai:
+  provider: pai
+  pai:
+    api-key: your-pai-api-key
+    base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+    model: qwen-plus
+    embedding-model: text-embedding-v2
+    timeout: 300000
+    temperature: 0.7
+
+# 向量数据库使用内存存储（InMemoryEmbeddingStore）

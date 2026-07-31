@@ -1,6 +1,14 @@
 import request from '../utils/request'
 
 /**
+ * 管理员/用户统一登录
+ * POST /user/login
+ * @param {Object} params {username,password}
+ */
+export function loginApi(params) {
+  return request.post('/user/login', params)
+}
+/**
  * ========== 后台管理接口 ==========
  *
  * 【后端对接说明】

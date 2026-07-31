@@ -31,10 +31,10 @@
 
     <!-- 景点列表 -->
     <section class="list" v-else>
-      <article class="card" v-for="item in list" :key="item.id">
+      <article class="card" v-for="item in list" :key="item.attractionId">
         <h3>{{ item.name }}</h3>
         <p>{{ item.city }} · {{ item.type }}</p>
-        <p class="card-desc">{{ item.desc }}</p>
+        <p class="card-desc">{{ item.description }}</p>
         <div class="card-footer">
           <span class="price">{{ item.price || '免费' }}</span>
           <span class="rating">★ {{ item.rating || '4.0' }}</span>
@@ -74,7 +74,7 @@
         </div>
         <div class="detail-section">
           <span>📝</span>
-          <span>景点简介：{{ detail.desc }}</span>
+          <span>{{ detail.description }}</span>
         </div>
         <button @click="detailVisible = false">关闭</button>
       </div>
@@ -95,7 +95,7 @@
  */
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { attractionListApi } from '../api/attraction'
+import { attractionListApi, attractionDetailApi } from '../api/attraction'
 
 const router = useRouter()
 
@@ -139,10 +139,9 @@ async function loadList() {
       pageSize
     })
 
-    // 从响应中取出列表和总数
-    // 兼容两种格式：res.list / res.data.list（取决于响应拦截器的处理）
-    list.value = res?.list || res?.data?.list || []
-    total.value = res?.total ?? res?.data?.total ?? 0
+    // 后端返回 MyBatis-Plus Page 对象：{ records: [], total: number }
+    list.value = res?.records || res?.list || []
+    total.value = res?.total ?? 0
   } catch (e) {
     // 请求失败：清空列表，显示错误提示
     list.value = []
@@ -172,13 +171,18 @@ function handlePageChange(page) {
 }
 
 /**
- * 查看详情
- * TODO: 后端就绪后，可改为调用 attractionDetailApi(id) 获取更完整的详情
- * 目前直接使用列表项数据（列表接口已返回详情所需的全部字段）
+ * 查看详情：调用后端详情接口获取完整数据
  */
-function showDetail(item) {
-  detail.value = item
-  detailVisible.value = true
+async function showDetail(item) {
+  try {
+    const data = await attractionDetailApi(item.attractionId)
+    detail.value = data
+    detailVisible.value = true
+  } catch (e) {
+    // 接口失败时降级使用列表数据
+    detail.value = item
+    detailVisible.value = true
+  }
 }
 </script>
 

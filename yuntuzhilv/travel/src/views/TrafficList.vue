@@ -32,7 +32,14 @@
       <article class="card" v-for="item in list" :key="item.id || item.code">
         <h3>{{ item.type }} · {{ item.code }}</h3>
         <p>{{ item.fromCity }} → {{ item.toCity }}</p>
-        <p>{{ item.time }} · ¥{{ item.price }}</p>
+        <div class="card-info">
+          <span class="duration">{{ item.duration }}</span>
+          <span class="price">¥{{ item.price }}</span>
+        </div>
+        <div class="card-extra" v-if="item.departTime || item.carrier">
+          <span v-if="item.departTime">出发：{{ item.departTime }}</span>
+          <span v-if="item.carrier">{{ item.carrier }}</span>
+        </div>
       </article>
     </section>
   </div>
@@ -165,6 +172,31 @@ async function handleSearch() {
 .card p {
   color: #56736a;
   margin-bottom: 4px;
+}
+
+.card-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 8px 0;
+}
+
+.card-info .duration {
+  color: #56736a;
+  font-size: 14px;
+}
+
+.card-info .price {
+  color: #dc2626;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.card-extra {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #8a9e96;
 }
 
 .status-tip {

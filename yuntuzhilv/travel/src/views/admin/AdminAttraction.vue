@@ -9,20 +9,20 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>景点ID</th>
             <th>名称</th>
             <th>类型</th>
             <th>票价</th>
+            <th>城市</th>
             <th>地址</th>
             <th>操作</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="item in list" :key="item.attractionId">
-            <td>{{ item.attractionId }}</td>
             <td>{{ item.name }}</td>
             <td>{{ item.type }}</td>
             <td>¥{{ item.price ?? '-' }}</td>
+            <td>{{ item.city || '-' }}</td>
             <td>{{ item.address || '-' }}</td>
             <td class="action-cell">
               <button class="action-btn edit" @click="openForm(item)">编辑</button>
@@ -51,6 +51,10 @@
           <div class="form-row">
             <label>名称</label>
             <input v-model="form.name" required />
+          </div>
+          <div class="form-row">
+            <label>城市</label>
+            <input v-model="form.city" placeholder="如 长沙" />
           </div>
           <div class="form-row">
             <label>类型</label>
@@ -139,6 +143,7 @@ const isEdit = ref(false)
 const form = ref({
   attractionId: null,
   name: '',
+  city: '',
   type: '',
   price: null,
   openTime: '',
@@ -190,7 +195,7 @@ function openForm(item) {
     form.value = { ...item }
   } else {
     isEdit.value = false
-    form.value = { attractionId: null, name: '', type: '', price: null, openTime: '', address: '', description: '', longitude: null, latitude: null }
+    form.value = { attractionId: null, name: '', city: '', type: '', price: null, openTime: '', address: '', description: '', longitude: null, latitude: null }
   }
   formVisible.value = true
 }
@@ -228,7 +233,7 @@ function handleDelete(item) {
  */
 async function confirmDelete() {
   try {
-    await deleteAttractionApi({ attractionId: deleteTarget.value.attractionId })
+    await deleteAttractionApi({ id: deleteTarget.value.attractionId })
     confirmVisible.value = false
     loadList()
   } catch (e) {

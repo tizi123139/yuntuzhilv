@@ -4,7 +4,7 @@ import router from '../router'
 // baseURL 对应后端统一前缀 /api
 const service = axios.create({
   baseURL: '/api',
-  timeout: 10000,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json'
   }
@@ -15,7 +15,7 @@ service.interceptors.request.use(config => {
   const token = localStorage.getItem('token')
   if (token) {
     config.headers = config.headers || {}
-    config.headers.token = token
+    config.headers.Authorization = `Bearer ${token}`
   }
   return config
 })
@@ -57,14 +57,35 @@ service.interceptors.response.use(
     // 文件流下载：自动触发浏览器下载
     if (res.config.responseType === 'blob') {
       const disposition = res.headers?.['content-disposition'] || ''
-      const filename = disposition.includes('filename=')
-        ? decodeURIComponent(disposition.split('filename=')[1].replace(/"/g, ''))
-        : 'download'
-      const url = window.URL.createObjectURL(new Blob([res.data]))
+      let filename = 'download'
+      // 优先解析 filename*=UTF-8''xxx 格式 (RFC 5987)
+      const utf8Match = disposition.match(/filename\*=UTF-8''(.+)/i)
+      if (utf8Match) {
+        try {
+          filename = decodeURIComponent(utf8Match[1].replace(/"/g, ''))
+        } catch (e) {
+          filename = utf8Match[1].replace(/"/g, '')
+        }
+      } else {
+        // 兼容 filename=xxx 格式
+        const plainMatch = disposition.match(/filename=([^;]+)/i)
+        if (plainMatch) {
+          filename = plainMatch[1].replace(/"/g, '').trim()
+        }
+      }
+      // 确保有 .pdf 后缀
+      if (!filename.toLowerCase().endsWith('.pdf')) {
+        filename += '.pdf'
+      }
+      // 保留原始 MIME 类型，避免浏览器当作纯文本
+      const blob = new Blob([res.data], { type: res.data.type || 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
       a.download = filename
+      document.body.appendChild(a)
       a.click()
+      document.body.removeChild(a)
       window.URL.revokeObjectURL(url)
       return res
     }

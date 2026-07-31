@@ -29,7 +29,7 @@ public class ItineraryVO {
 
     private BigDecimal totalCost;
 
-    private String interests;
+    private List<String> interests;
 
     private String travelTips;
 
@@ -44,9 +44,12 @@ public class ItineraryVO {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createTime;
 
-    private List<ItineraryItemVO> attractions;
+    /** 按天分组的行程明细 */
+    private List<DayPlan> dayPlans;
 
-    private List<ItineraryItemVO> hotels;
-
-    private List<ItineraryItemVO> traffics;
+    @Data
+    public static class DayPlan {
+        private Integer dayNumber;
+        private List<ItineraryItemVO> items;
+    }
 }

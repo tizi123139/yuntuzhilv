@@ -7,5 +7,5 @@ public interface SystemLogService {
 
     void saveLog(SystemLog log);
 
-    Page<SystemLog> getLogs(String module, String operation, Integer pageNum, Integer pageSize);
+    Page<SystemLog> getLogs(String operatorType, String module, Integer pageNum, Integer pageSize);
 }

@@ -110,7 +110,7 @@
                       <circle cx="12" cy="12" r="10" />
                       <circle cx="12" cy="12" r="3" />
                     </svg>
-                    <span>{{ item.fromCity || '出发地' }}</span>
+                    <span>{{ item.startCity || '出发地' }}</span>
                   </div>
                   <div class="arrow-icon">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -123,7 +123,7 @@
                       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                       <circle cx="12" cy="10" r="3" />
                     </svg>
-                    <span>{{ item.toCity || '目的地' }}</span>
+                    <span>{{ item.destination || '目的地' }}</span>
                   </div>
                 </div>
               </div>
@@ -164,6 +164,26 @@
                   <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
                 <span>查看详情</span>
+              </button>
+              <button 
+                v-if="item.status?.toLowerCase() !== 'completed'"
+                class="action-btn success" 
+                @click="completeItem(item)"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>已完成</span>
+              </button>
+              <button 
+                v-else
+                class="action-btn" 
+                disabled
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>已完成</span>
               </button>
               <button class="action-btn" @click="editItem(item)">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -212,7 +232,7 @@
 import { onMounted, ref, computed } from 'vue'
 import { showToast } from '../utils/toast';
 import { useRouter } from 'vue-router'
-import { bookItineraryApi, deleteItineraryApi, myItineraryListApi } from '../api/itinerary'
+import { bookItineraryApi, deleteItineraryApi, myItineraryListApi, archiveItineraryApi } from '../api/itinerary'
 
 const router = useRouter()
 const list = ref([])
@@ -226,7 +246,10 @@ const tabs = [
 
 const filteredList = computed(() => {
   if (activeTab.value === 'all') return list.value
-  return list.value.filter(item => item.status === activeTab.value)
+  return list.value.filter(item => {
+    const status = (item.status || '').toLowerCase()
+    return status === activeTab.value
+  })
 })
 
 const totalBudget = computed(() => {
@@ -244,6 +267,7 @@ function formatDate(date) {
 
 function getStatusText(status) {
   const map = {
+    ACTIVE: '进行中',
     active: '进行中',
     completed: '已完成',
     planned: '待出发'
@@ -253,6 +277,7 @@ function getStatusText(status) {
 
 function getStatusClass(status) {
   const map = {
+    ACTIVE: 'status-active',
     active: 'status-active',
     completed: 'status-completed',
     planned: 'status-planned'
@@ -264,7 +289,7 @@ function getStatusClass(status) {
 onMounted(async () => {
   try {
     const res = await myItineraryListApi()
-    list.value = res?.data?.list || res?.list || []
+    list.value = res?.records || res?.data?.list || res?.list || []
   } catch (e) {
     list.value = []
     showToast('获取行程列表失败，请重试', 'error')
@@ -273,7 +298,7 @@ onMounted(async () => {
 
 // 查看详情：携带行程 ID 跳转结果页，结果页通过 API 获取完整数据
 function viewDetail(item) {
-  router.push(`/itinerary-result?id=${item.id}`)
+  router.push(`/itinerary-result?id=${item.itineraryId}`)
 }
 
 // 编辑：携带表单数据跳转至创建页，通过 query 预填
@@ -281,8 +306,8 @@ function editItem(item) {
   router.push({
     path: '/create-itinerary',
     query: {
-      fromCity: item.fromCity,
-      toCity: item.toCity,
+      fromCity: item.startCity,
+      toCity: item.destination,
       days: item.days,
       budget: item.totalBudget
     }
@@ -295,8 +320,8 @@ async function removeItem(item) {
   if (!ok) return
 
   try {
-    await deleteItineraryApi(item.id)
-    list.value = list.value.filter(v => v.id !== item.id)
+    await deleteItineraryApi(item.itineraryId)
+    list.value = list.value.filter(v => v.itineraryId !== item.itineraryId)
   } catch (e) {
     showToast('删除失败，请重试', 'error')
   }
@@ -305,10 +330,25 @@ async function removeItem(item) {
 // 预订：调用后端预订接口
 async function bookItem(item) {
   try {
-    const res = await bookItineraryApi(item.id)
+    const res = await bookItineraryApi(item.itineraryId)
     showToast(res?.message || `预订成功：${item.title}`, 'success')
   } catch (e) {
     showToast('预订失败，请重试', 'error')
+  }
+}
+
+// 标记行程为已完成
+async function completeItem(item) {
+  const ok = confirm(`确认标记"${item.title}"为已完成吗？`)
+  if (!ok) return
+
+  try {
+    await archiveItineraryApi(item.itineraryId)
+    item.status = 'completed'
+    item.isArchived = 1
+    showToast('已标记为完成', 'success')
+  } catch (e) {
+    showToast('操作失败，请重试', 'error')
   }
 }
 </script>
@@ -703,12 +743,31 @@ async function bookItem(item) {
   box-shadow: 0 4px 12px rgba(81, 184, 145, 0.4);
 }
 
-.action-btn:not(.primary):not(.outline) {
+.action-btn.success {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  color: #fff;
+}
+
+.action-btn.success:hover {
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.action-btn.success:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.action-btn:not(.primary):not(.outline):not(.success) {
   background: rgba(81, 184, 145, 0.1);
   color: #2d8a6e;
 }
 
-.action-btn:not(.primary):not(.outline):hover {
+.action-btn:not(.primary):not(.outline):not(.success):hover {
   background: rgba(81, 184, 145, 0.2);
 }
 

@@ -31,9 +31,17 @@
 
     <!-- 酒店列表 -->
     <section class="list" v-else>
-      <article class="card" v-for="item in list" :key="item.id">
+      <article class="card" v-for="item in list" :key="item.hotelId">
         <h3>{{ item.name }}</h3>
-        <p>{{ item.star }} 星 · ¥{{ item.price }}/晚</p>
+        <p class="card-location">{{ item.city }} · {{ item.address }}</p>
+        <p class="card-desc">{{ item.description }}</p>
+        <div class="card-footer">
+          <span class="star">{{ item.star }} 星</span>
+          <span class="price">¥{{ item.price }}/晚</span>
+        </div>
+        <div class="card-facilities" v-if="item.facilities">
+          <span v-for="f in item.facilities.split('、').slice(0, 3)" :key="f" class="tag">{{ f }}</span>
+        </div>
         <button @click="showDetail(item)">查看详情</button>
       </article>
     </section>
@@ -50,9 +58,32 @@
     <div v-if="detailVisible" class="modal" @click.self="detailVisible = false">
       <div class="modal-inner">
         <h3>{{ detail.name }}</h3>
-        <p>星级：{{ detail.star }}</p>
-        <p>价格：¥{{ detail.price }}/晚</p>
-        <p>介绍：{{ detail.desc }}</p>
+        <p class="detail-location">{{ detail.city }} · {{ detail.address }}</p>
+        <div class="detail-info">
+          <div class="info-item">
+            <span>★</span>
+            <span>{{ detail.star }} 星</span>
+          </div>
+          <div class="info-item">
+            <span>💰</span>
+            <span>¥{{ detail.price }}/晚</span>
+          </div>
+          <div class="info-item" v-if="detail.phone">
+            <span>📞</span>
+            <span>{{ detail.phone }}</span>
+          </div>
+        </div>
+        <div class="detail-section">
+          <span>📝</span>
+          <span>{{ detail.description }}</span>
+        </div>
+        <div class="detail-section" v-if="detail.facilities">
+          <span>🏨</span>
+          <span>设施：{{ detail.facilities }}</span>
+        </div>
+        <div class="detail-section" v-if="detail.imgUrl">
+          <img :src="detail.imgUrl" class="detail-img" alt="酒店图片" />
+        </div>
         <button @click="detailVisible = false">关闭</button>
       </div>
     </div>
@@ -109,15 +140,15 @@ async function loadList() {
   try {
     // 向后端请求数据，传入筛选条件 + 分页参数
     const res = await hotelListApi({
-      star: query.star,
-      maxPrice: query.maxPrice,
+      star: query.star ? Number(query.star) : undefined,
+      maxPrice: query.maxPrice || undefined,
       pageNum: currentPage.value,
       pageSize
     })
 
-    // 从响应中取出列表和总数
-    list.value = res?.list || res?.data?.list || []
-    total.value = res?.total ?? res?.data?.total ?? 0
+    // 后端返回 MyBatis-Plus Page 对象：{ records: [], total: number }
+    list.value = res?.records || res?.list || []
+    total.value = res?.total ?? 0
   } catch (e) {
     // 请求失败：清空列表，显示错误提示
     list.value = []
@@ -153,8 +184,9 @@ function handlePageChange(page) {
  */
 async function showDetail(item) {
   try {
-    const res = await hotelDetailApi(item.id)
-    detail.value = res || item
+    const id = item.hotelId || item.id
+    const data = await hotelDetailApi(id)
+    detail.value = data || item
   } catch (e) {
     // 详情接口失败时，使用列表中已有的数据展示
     detail.value = item
@@ -231,6 +263,55 @@ async function showDetail(item) {
   margin-bottom: 10px;
 }
 
+.card-location {
+  font-size: 13px;
+  color: #8a9e96;
+}
+
+.card-desc {
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.card-footer .star {
+  color: #f0c76d;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.card-footer .price {
+  color: #dc2626;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.card-facilities {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.card-facilities .tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  background: #e8f5f0;
+  color: #1a5a45;
+  border-radius: 4px;
+}
+
 .pagination {
   max-width: 960px;
   margin: 24px auto 0;
@@ -302,10 +383,63 @@ async function showDetail(item) {
 
 .modal-inner {
   width: 92%;
-  max-width: 420px;
+  max-width: 500px;
   background: #fff;
   border-radius: 14px;
-  padding: 18px;
+  padding: 24px;
+}
+
+.modal-inner h3 {
+  color: #1a5a45;
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+.detail-location {
+  color: #8a9e96;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.detail-info {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 16px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #56736a;
+}
+
+.info-item span:first-child {
+  font-size: 16px;
+}
+
+.detail-section {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #56736a;
+  line-height: 1.6;
+}
+
+.detail-section span:first-child {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.detail-img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-top: 4px;
 }
 
 @media (max-width: 900px) {

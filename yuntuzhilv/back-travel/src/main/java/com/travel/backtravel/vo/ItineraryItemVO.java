@@ -15,9 +15,6 @@ public class ItineraryItemVO {
 
     private Integer orderNum;
 
-    /** 资源 ID（景点/酒店/交通 ID） */
-    private String resourceId;
-
     /** 资源名称 */
     private String itemName;
 

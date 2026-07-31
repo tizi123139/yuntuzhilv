@@ -443,7 +443,7 @@ onMounted(async () => {
  * 账号密码登录（原有逻辑，TODO 保留待后端对接）
  * ======================================================== */
 const handleLogin = async () => {
-  // --- mock 登录（后端就绪后删除此段） ---
+  //--- mock 登录（后端就绪后删除此段） ---
   showToast(`登录成功！欢迎 ${loginForm.value.username}`, 'success');
   showAuthModal.value = false;
   try {
@@ -452,8 +452,6 @@ const handleLogin = async () => {
     localStorage.setItem('role', 'user')
   } catch (e) { }
   loginForm.value = { username: '', password: '' };
-  
-  // 如果有登录前的目标页面，跳转到目标页面，否则跳转到首页
   if (pendingRoute.value) {
     router.replace(pendingRoute.value)
     pendingRoute.value = null
@@ -461,21 +459,21 @@ const handleLogin = async () => {
     router.replace('/home')
   }
 
-  // --- 真实接口（取消注释并调整） ---
+  // // --- 真实接口 ---
   // try {
-  //   const res = await loginApi(loginForm.value)
-  //   const data = res?.data || res
+  //   const data = await loginApi(loginForm.value)
   //   localStorage.setItem('token', data.token)
-  //   localStorage.setItem('role', data.role || 'user')
-  //   localStorage.setItem('username', loginForm.value.username)
-  //   if (data.userId) localStorage.setItem('userId', data.userId)
+  //   localStorage.setItem('role', data.user?.role || 'user')
+  //   localStorage.setItem('username', data.user?.username || loginForm.value.username)
+  //   if (data.user?.userId) localStorage.setItem('userId', data.user.userId)
+  //   showToast(`登录成功！欢迎 ${data.user?.username || loginForm.value.username}`, 'success')
   //   showAuthModal.value = false
   //   loginForm.value = { username: '', password: '' }
   //   if (pendingRoute.value) {
   //     router.replace(pendingRoute.value)
   //     pendingRoute.value = null
   //   } else {
-  //     router.replace(data.role === 'admin' ? '/admin' : '/home')
+  //     router.replace(data.user?.role === 'admin' ? '/admin' : '/home')
   //   }
   // } catch (e) {
   //   showToast('登录失败，请检查账号密码', 'error')
@@ -523,46 +521,44 @@ const handleRegister = async () => {
   }
 
   // --- mock 注册（后端就绪后删除此段） ---
-  showToast(`注册成功！欢迎 ${registerForm.value.username}`, 'success');
-  showAuthModal.value = false;
-  try {
-    localStorage.setItem('username', registerForm.value.username || '')
-    localStorage.setItem('token', 'demo-token')
-    localStorage.setItem('role', 'user')
-  } catch (e) { }
-  registerForm.value = {
-    username: '', email: '', phone: '', code: '', password: '', confirmPassword: '', agree: false
-  };
-  
-  // 如果有登录前的目标页面，跳转到目标页面，否则跳转到首页
-  if (pendingRoute.value) {
-    router.push(pendingRoute.value)
-    pendingRoute.value = null
-  } else {
-    router.push('/home')
-  }
-
-  // --- 真实接口（取消注释并调整） ---
+  // showToast(`注册成功！欢迎 ${registerForm.value.username}`, 'success');
+  // showAuthModal.value = false;
   // try {
-  //   await registerApi({
-  //     username: registerForm.value.username,
-  //     email: registerForm.value.email,
-  //     phone: registerForm.value.phone,
-  //     code: registerForm.value.code,
-  //     password: registerForm.value.password
-  //   })
-  //   alert(`注册成功！欢迎 ${registerForm.value.username}`)
-  //   showAuthModal.value = false
-  //   registerForm.value = { username: '', email: '', phone: '', code: '', password: '', confirmPassword: '', agree: false }
-  //   if (pendingRoute.value) {
-  //     router.push(pendingRoute.value)
-  //     pendingRoute.value = null
-  //   } else {
-  //     router.push('/home')
-  //   }
-  // } catch (e) {
-  //   alert('注册失败，请稍后重试')
+  //   localStorage.setItem('username', registerForm.value.username || '')
+  //   localStorage.setItem('token', 'demo-token')
+  //   localStorage.setItem('role', 'user')
+  // } catch (e) { }
+  // registerForm.value = {
+  //   username: '', email: '', phone: '', code: '', password: '', confirmPassword: '', agree: false
+  // };
+  // if (pendingRoute.value) {
+  //   router.push(pendingRoute.value)
+  //   pendingRoute.value = null
+  // } else {
+  //   router.push('/home')
   // }
+
+  // --- 真实接口 ---
+  try {
+    await registerApi({
+      username: registerForm.value.username,
+      email: registerForm.value.email,
+      password: registerForm.value.password
+    })
+    showToast(`注册成功！欢迎 ${registerForm.value.username}`, 'success')
+    showAuthModal.value = false
+    registerForm.value = {
+      username: '', email: '', phone: '', code: '', password: '', confirmPassword: '', agree: false
+    };
+    if (pendingRoute.value) {
+      router.push(pendingRoute.value)
+      pendingRoute.value = null
+    } else {
+      router.push('/home')
+    }
+  } catch (e) {
+    showToast('注册失败，请稍后重试', 'error')
+  }
 };
 
 /* ========================================================

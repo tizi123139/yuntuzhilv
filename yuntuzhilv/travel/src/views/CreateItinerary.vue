@@ -220,27 +220,39 @@ async function handleGenerate() {
 
   loading.value = true
   try {
-    const res = await generateItineraryApi({ ...form })
+    // 计算日期：今天作为开始日期
+    const today = new Date()
+    const startDate = today.toISOString().split('T')[0] // YYYY-MM-DD
+    
+    const endDateObj = new Date(today)
+    endDateObj.setDate(endDateObj.getDate() + form.days)
+    const endDate = endDateObj.toISOString().split('T')[0]
+    
+    // 构造后端需要的参数
+    const params = {
+      departureCity: form.fromCity,
+      destinationCity: form.toCity,
+      startDate: startDate,
+      endDate: endDate,
+      days: form.days,
+      budget: form.budget,
+      interests: form.interests,
+      people: 2
+    }
+    
+    const res = await generateItineraryApi(params)
     const itinerary = res?.data || res
-    if (!itinerary?.id) {
-      showToast('使用模拟数据生成行程', 'info')
-      // 使用模拟数据
-      const mockItinerary = generateMockItinerary()
-      // 将模拟数据存储到 localStorage，供结果页使用
-      localStorage.setItem('mockItinerary', JSON.stringify(mockItinerary))
-      // 携带行程 ID 跳转结果页
-      router.push(`/itinerary-result?id=${mockItinerary.id}`)
+    
+    if (!itinerary?.itineraryId) {
+      showToast('生成失败，请重试', 'error')
       return
     }
-    // 携带行程 ID 跳转结果页，结果页通过 ID 从后端获取完整数据
-    router.push(`/itinerary-result?id=${itinerary.id}`)
+    
+    // 携带行程 ID 跳转结果页
+    router.push(`/itinerary-result?id=${itinerary.itineraryId}`)
   } catch (e) {
-    showToast('使用模拟数据生成行程', 'info')
-    // 使用模拟数据
-    const mockItinerary = generateMockItinerary()
-    // 将模拟数据存储到 localStorage，供结果页使用
-    localStorage.setItem('mockItinerary', JSON.stringify(mockItinerary))
-    router.push(`/itinerary-result?id=${mockItinerary.id}`)
+    console.error('生成行程失败:', e)
+    showToast('生成行程失败，请检查网络或重试', 'error')
   } finally {
     loading.value = false
   }

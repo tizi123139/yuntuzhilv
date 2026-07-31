@@ -33,6 +33,19 @@ public class RedisUtil {
         return redisTemplate.hasKey(key);
     }
 
+    public Boolean setNX(String key, Object value, long timeout, TimeUnit unit) {
+        Boolean result = redisTemplate.opsForValue().setIfAbsent(key, value, timeout, unit);
+        return result != null ? result : false;
+    }
+
+    public void addToSet(String key, Object value) {
+        redisTemplate.opsForSet().add(key, value);
+    }
+
+    public void expire(String key, long timeout, TimeUnit unit) {
+        redisTemplate.expire(key, timeout, unit);
+    }
+
     public void delete(String key) {
         redisTemplate.delete(key);
     }
@@ -53,16 +66,8 @@ public class RedisUtil {
         return redisTemplate.opsForValue().decrement(key, delta);
     }
 
-    public void expire(String key, long timeout, TimeUnit unit) {
-        redisTemplate.expire(key, timeout, unit);
-    }
-
     public Long getExpire(String key) {
         return redisTemplate.getExpire(key);
-    }
-
-    public void addToSet(String key, Object value) {
-        redisTemplate.opsForSet().add(key, value);
     }
 
     public Boolean isMemberOfSet(String key, Object value) {
@@ -71,12 +76,5 @@ public class RedisUtil {
 
     public void removeFromSet(String key, Object value) {
         redisTemplate.opsForSet().remove(key, value);
-    }
-
-    public void setNX(String key, Object value, long timeout, TimeUnit unit) {
-        Boolean success = redisTemplate.opsForValue().setIfAbsent(key, value, timeout, unit);
-        if (!Boolean.TRUE.equals(success)) {
-            throw new RuntimeException("重复请求");
-        }
     }
 }

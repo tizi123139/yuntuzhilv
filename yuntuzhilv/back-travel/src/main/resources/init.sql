@@ -102,6 +102,7 @@ CREATE TABLE IF NOT EXISTS `tb_itinerary` (
   `total_cost` DECIMAL(10,2) DEFAULT 0.00 COMMENT '实际总花费',
   `interests` VARCHAR(255) DEFAULT NULL COMMENT '兴趣标签逗号分隔',
   `travel_tips` TEXT DEFAULT NULL COMMENT 'AI出行贴士',
+  `day_plans_json` LONGTEXT DEFAULT NULL COMMENT '每日行程JSON（替代三张明细表）',
   `people` INT DEFAULT 1 COMMENT '出行人数',
   `status` VARCHAR(20) NOT NULL DEFAULT 'planned' COMMENT 'planned计划中/active进行中/completed已完成',
   `is_temp` TINYINT NOT NULL DEFAULT 1 COMMENT '1临时行程，0永久保存',

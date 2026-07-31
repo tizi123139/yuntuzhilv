@@ -38,6 +38,9 @@ public class Itinerary {
 
     private String travelTips;
 
+    /** 每日行程 JSON（替代三张明细表） */
+    private String dayPlansJson;
+
     private Integer people;
 
     private String status;

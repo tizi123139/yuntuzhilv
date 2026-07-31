@@ -2,77 +2,54 @@ package com.travel.backtravel.rag;
 
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.Metadata;
-import dev.langchain4j.data.document.parser.TextDocumentParser;
 import dev.langchain4j.data.document.splitter.DocumentSplitters;
+import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
-import dev.langchain4j.retriever.EmbeddingStoreRetriever;
-import dev.langchain4j.retriever.Retriever;
+import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.store.embedding.EmbeddingStore;
-import lombok.RequiredArgsConstructor;
+import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class VectorRetrieval {
 
-    private final EmbeddingStore<Document> embeddingStore;
-
-    @Value("${langchain.qwen.api-key}")
+    @Value("${ai.pai.api-key:}")
     private String apiKey;
 
-    @Value("${langchain.qwen.base-url}")
+    @Value("${ai.pai.base-url:https://dashscope.aliyuncs.com/compatible-mode/v1}")
     private String baseUrl;
 
-    public void addDocument(String content, String metadataKey, String metadataValue) {
-        try {
-            Document document = Document.from(
-                    content,
-                    new TextDocumentParser(),
-                    Metadata.from(metadataKey, metadataValue)
-            );
-            
-            List<Document> chunks = DocumentSplitters.recursive(500, 50).split(document);
-            
-            EmbeddingModel embeddingModel = OpenAiEmbeddingModel.builder()
-                    .apiKey(apiKey)
-                    .baseUrl(baseUrl)
-                    .modelName("text-embedding-ada-002")
-                    .build();
-            
-            embeddingStore.add(chunks, embeddingModel);
-            log.info("Document added to vector store: {}", metadataValue);
-        } catch (Exception e) {
-            log.error("Failed to add document to vector store", e);
-        }
+    @Value("${ai.pai.embedding-model:text-embedding-v2}")
+    private String embeddingModelName;
+
+    // 内存向量库
+    final EmbeddingStore<TextSegment> attractionStore = new InMemoryEmbeddingStore<>();
+    final EmbeddingStore<TextSegment> hotelStore = new InMemoryEmbeddingStore<>();
+
+    // 缓存单例，避免每次搜索都重新创建
+    private EmbeddingModel cachedEmbeddingModel;
+
+    @PostConstruct
+    public void init() {
+        cachedEmbeddingModel = OpenAiEmbeddingModel.builder()
+                .apiKey(apiKey)
+                .baseUrl(baseUrl)
+                .modelName(embeddingModelName)
+                .build();
+        log.info("EmbeddingModel 初始化完成: {}", embeddingModelName);
     }
 
-    public List<String> search(String query, int maxResults) {
-        try {
-            EmbeddingModel embeddingModel = OpenAiEmbeddingModel.builder()
-                    .apiKey(apiKey)
-                    .baseUrl(baseUrl)
-                    .modelName("text-embedding-ada-002")
-                    .build();
-            
-            Retriever<Document> retriever = EmbeddingStoreRetriever.builder()
-                    .embeddingStore(embeddingStore)
-                    .embeddingModel(embeddingModel)
-                    .maxResults(maxResults)
-                    .build();
-            
-            List<Document> results = retriever.retrieve(query);
-            return results.stream()
-                    .map(Document::text)
-                    .toList();
-        } catch (Exception e) {
-            log.error("Failed to search vector store", e);
-            return List.of();
-        }
+    private EmbeddingModel getEmbeddingModel() {
+        return cachedEmbeddingModel;
     }
+
+
 }

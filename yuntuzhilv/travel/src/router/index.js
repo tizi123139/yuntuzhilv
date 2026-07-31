@@ -122,12 +122,12 @@ router.beforeEach((to, from, next) => {
   }
 
   if (token && to.path === '/BLhome') {
-    next(role === 'admin' ? '/admin' : '/home')
+    next((role || '').toLowerCase() === 'admin' ? '/admin' : '/home')
     return
   }
 
-  if (to.meta.requiresAdmin && role !== 'admin') {
-    next(role === 'user' ? '/home' : '/BLhome')
+  if (to.meta.requiresAdmin && (role || '').toLowerCase() !== 'admin') {
+    next((role || '').toLowerCase() === 'user' ? '/home' : '/BLhome')
     return
   }
 

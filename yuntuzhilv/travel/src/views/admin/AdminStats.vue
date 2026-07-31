@@ -393,7 +393,7 @@ onMounted(async () => {
   // 请求热门景点数据
   try {
     const res = await hotAttractionStatsApi()
-    hotAttractions.value = res?.list || res || []
+    hotAttractions.value = res || []
   } catch (e) {
     hotAttractions.value = []
     console.error('[AdminStats] 热门景点统计加载失败:', e)
@@ -402,7 +402,7 @@ onMounted(async () => {
   // 请求热门城市数据
   try {
     const res = await hotCityStatsApi()
-    hotCities.value = res?.list || res || []
+    hotCities.value = res || []
   } catch (e) {
     hotCities.value = []
     console.error('[AdminStats] 热门城市统计加载失败:', e)
@@ -431,7 +431,7 @@ async function loadPieData(city) {
   // 加载酒店选择占比数据
   try {
     const res = await hotelSelectionRatioApi({ city })
-    hotelSelectionData.value = res?.list || res || []
+    hotelSelectionData.value = res || []
   } catch (e) {
     hotelSelectionData.value = []
     console.error('[AdminStats] 酒店选择占比加载失败:', e)
@@ -440,7 +440,7 @@ async function loadPieData(city) {
   // 加载景点选择占比数据
   try {
     const res = await attractionSelectionRatioApi({ city })
-    attractionSelectionData.value = res?.list || res || []
+    attractionSelectionData.value = res || []
   } catch (e) {
     attractionSelectionData.value = []
     console.error('[AdminStats] 景点选择占比加载失败:', e)
@@ -453,7 +453,7 @@ async function loadPieData(city) {
 async function loadTrendData() {
   try {
     const res = await cityTrendApi()
-    trendData.value = res?.data || res || { months: [], cities: [] }
+    trendData.value = res || { months: [], cities: [] }
   } catch (e) {
     trendData.value = { months: [], cities: [] }
     console.error('[AdminStats] 城市趋势数据加载失败:', e)

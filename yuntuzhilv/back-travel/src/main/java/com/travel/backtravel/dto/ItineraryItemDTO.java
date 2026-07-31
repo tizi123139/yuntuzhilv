@@ -13,9 +13,6 @@ public class ItineraryItemDTO {
 
     private Integer orderNum;
 
-    /** 景点/酒店/交通的资源 ID（VARCHAR(32)） */
-    private String resourceId;
-
     private String itemName;
 
     private String itemDesc;

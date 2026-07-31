@@ -22,4 +22,9 @@ public interface ItineraryService {
     String exportToPdf(Long userId, String itineraryId);
 
     void createBooking(Long userId, BookingCreateDTO dto);
+
+    /**
+     * 保存 AI 生成的行程（直接存储 dayPlansJson，不走明细表）
+     */
+    ItineraryVO saveAiItinerary(Long userId, ItineraryVO vo);
 }

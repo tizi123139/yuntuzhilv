@@ -47,6 +47,8 @@
 import { ref } from 'vue'
 import { showToast } from '../utils/toast';
 import { useRouter } from 'vue-router'
+// 引入登录接口
+import { loginApi } from '../api/admin'
 
 const router = useRouter()
 const loading = ref(false)
@@ -61,25 +63,21 @@ async function handleLogin() {
     showToast('请输入账号和密码', 'warning')
     return
   }
-
   loading.value = true
   try {
-    const data = {
-      token: 'admin-demo-token',
-      role: 'admin',
-      userId: 'admin-001'
-    }
-
-    localStorage.setItem('token', data.token)
-    localStorage.setItem('role', data.role)
+    // 调用后端真实登录接口
+    const res = await loginApi(form.value)
+    // 响应拦截器已解包，res 直接是 LoginVO：{token, user:{role,userId,...}}
+    localStorage.setItem('token', res.token)
+    localStorage.setItem('role', res.user?.role || 'admin')
     localStorage.setItem('username', form.value.username)
-    if (data.userId) localStorage.setItem('userId', data.userId)
+    if (res.user?.userId) localStorage.setItem('userId', res.user.userId)
 
     showToast(`管理员登录成功，欢迎 ${form.value.username}`, 'success')
     router.replace('/admin')
   } catch (e) {
     console.error('登录失败', e)
-    showToast('登录失败，请检查账号密码', 'error')
+    showToast('账号密码错误或账号已禁用', 'error')
   } finally {
     loading.value = false
   }

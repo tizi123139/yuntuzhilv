@@ -22,11 +22,19 @@ public class AiPlanDTO {
     @NotNull(message = "结束日期不能为空")
     private LocalDate endDate;
 
+    private Integer people;
+
+    private Integer days;
+
     private BigDecimal budget;
 
-    private String interests;
+    private List<String> interests;
 
     private String requirements;
+
+    private String accommodationNeed;
+
+    private String travelRhythm;
 
     private Long existingItineraryId;
 
